@@ -1,3 +1,12 @@
+# node
 node_modules
+
+# cypress
 cypress/videos
 cypress/screenshots
+
+# playwright
+traces
+
+# general
+reports
