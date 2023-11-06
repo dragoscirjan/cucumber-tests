@@ -1,0 +1,33 @@
+{
+  "name": "performance-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "cucumber-check": "cucumber-js features/**/*.feature --dry-run --require world/custom-world.ts --require steps-definitions/**/*.ts --require hooks/**/*.ts  --require-module ts-node/register --format-options \"{\\\"snippetInterface\\\": \\\"async-await\\\"}\" --format summary --format progress --format progress-bar  --publish-quiet",
+    "cypress": "cypress",
+    "cypress:open": "npm run cypress -- open",
+    "cypress:run": "npm run cypress -- run",
+    "--playwright": "playwright test --config=playwright.config.ts",
+    "playwright": "cucumber-js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@badeball/cypress-cucumber-preprocessor": "^19.0.1",
+    "@bahmutov/cypress-esbuild-preprocessor": "^2.2.0",
+    "@cucumber/cucumber": "^10.0.1",
+    "@cypress/browserify-preprocessor": "^3.0.2",
+    "@playwright/test": "^1.39.0",
+    "cross-env": "^7.0.3",
+    "cypress": "^13.4.0",
+    "fs-extra": "^11.1.1",
+    "playwright": "^1.39.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.3"
+  }
+}
