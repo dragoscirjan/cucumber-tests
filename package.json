@@ -9,7 +9,8 @@
     "cypress:open": "npm run cypress -- open",
     "cypress:run": "npm run cypress -- run",
     "--playwright": "playwright test --config=playwright.config.ts",
-    "playwright": "cucumber-js"
+    "playwright": "cucumber-js --config ./cucumber/playwright.js",
+    "testcafe": "cucumber-js --config ./cucumber/testcafe.js"
   },
   "keywords": [],
   "author": "",
@@ -20,14 +21,20 @@
     "@cucumber/cucumber": "^10.0.1",
     "@cypress/browserify-preprocessor": "^3.0.2",
     "@playwright/test": "^1.39.0",
+    "chai-string": "^1.5.0",
     "cross-env": "^7.0.3",
     "cypress": "^13.4.0",
     "fs-extra": "^11.1.1",
+    "logform": "^2.6.0",
+    "node-base64-image": "^2.0.5",
     "playwright": "^1.39.0",
+    "testcafe": "^3.3.0",
     "ts-node": "^10.9.1",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "winston": "^3.11.0"
   },
   "devDependencies": {
+    "@types/chai-string": "^1.4.4",
     "@types/fs-extra": "^11.0.3"
   }
 }

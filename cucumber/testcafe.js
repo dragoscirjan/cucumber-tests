@@ -18,7 +18,7 @@ const config = {
     ],
     // formatOptions: { snippetInterface: "async-await" },
     paths: ["features/"],
-    require: ["playwright/**/*.ts"],
+    require: ["playwright/**/*.ts", "cucumber/support/testcafe/**/*.ts"],
     requireModule: ["ts-node/register"],
     //   worldParameters: getWorldParams(),
     //   tags: ["not @ignore"],

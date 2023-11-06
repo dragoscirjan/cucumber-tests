@@ -1,6 +1,6 @@
 import { Given, When, Then } from "@cucumber/cucumber";
 import { expect } from "@playwright/test";
-import { ICustomWorld } from "../support/custom-world";
+import { ICustomWorld } from "../../cucumber/support/playwright/custom-world";
 import selectors from "../../pages/selectors";
 
 Given("I visit Google", async function (this: ICustomWorld) {

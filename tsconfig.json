@@ -12,6 +12,6 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true
   },
-  "include": ["**/*.ts", "cucumber.js"],
+  "include": ["**/*.ts", "playwright.js"],
   "exclude": ["node_modules"]
 }
