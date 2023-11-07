@@ -1,19 +1,23 @@
+declare global {
+  var testController: any;
+}
+
 import { Given, When, Then } from "@cucumber/cucumber";
 import { Selector } from "testcafe";
 import { expect } from "chai";
+
 import selectors from "../../pages/selectors";
-import { TestControllerHolder } from "../test-controller-holder";
+import testControllerHolder from "../../cucumber/support/testcafe/holder";
 
 Given("I visit Google", async function () {
-  const t = await TestControllerHolder.get();
-  await t.navigateTo("https://www.google.com");
-  await t.click(Selector(selectors.acceptAllButton));
+  await testController.navigateTo("https://www.google.com");
+  await testController.click(Selector(selectors.acceptAllButton));
 });
 
 When(
   "I type {string} into the search input",
   async function (search_term: string) {
-    const t = await TestControllerHolder.get();
+    const t = await testControllerHolder.get();
     await t.typeText(selectors.searchInput, search_term);
   }
 );

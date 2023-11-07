@@ -1,84 +1,38 @@
-import { encode } from "node-base64-image";
-import { testControllerHolder } from "./test-controller-holder";
-import {
-  IWorldOptions,
-  setDefaultTimeout,
-  setWorldConstructor,
-} from "@cucumber/cucumber";
-import * as chai from "chai";
-import * as chaiString from "chai-string";
-import { isLiveModeOn } from "./helper";
-import logger from "./logger";
-const screenshot = require("screenshot-desktop");
+import { setWorldConstructor, World, IWorldOptions } from "@cucumber/cucumber";
+import * as messages from "@cucumber/messages";
 
-chai.use(chaiString);
+import testControllerHolder from "./holder";
 
-const DEFAULT_TIMEOUT = isLiveModeOn() ? 60 * 60 * 1000 : 30 * 1000;
-
-export interface Ctx {
-  getTestController: () => Promise<TestController>;
-  addScreenshotToReport: () => Promise<void>;
-  attachScreenshotToReport: (pathToScreenshot: string) => Promise<void>;
-  attachScreenshotInPngFormatToReport: (pngImage: any) => Promise<void>;
+export interface CucumberWorldConstructorParams {
+  parameters: { [key: string]: string };
 }
 
-function CustomWorld(this: IWorldOptions & Ctx, { attach }: { attach: any }) {
-  /**
-   * this function is crucial for the Given-Part of each feature as it provides the TestController
-   */
-  this.getTestController = () => testControllerHolder.get();
+export interface ICustomWorld extends World {
+  debug: boolean;
+  feature?: messages.Pickle;
 
-  /**
-   * function that attaches the attachment (e.g. screenshot) to the report
-   */
-  this.attach = attach;
+  testName?: string;
+  startTime?: Date;
+}
 
-  /**
-   * Adds embeddings to the "After"-step (see report.json):
-   * "embeddings": [{ "data": "base64 encoded image", "mime_type": "image/png" }]
-   */
-  this.addScreenshotToReport = async function () {
-    await (
-      await this.getTestController()
-    )
-      .takeScreenshot()
-      .then(this.attachScreenshotToReport)
-      .catch(async (error) => {
-        // Workaround for https://github.com/DevExpress/testcafe/issues/4231
-        logger.error(
-          "encountered an error during taking screenshot, retry using another library...",
-          error
-        );
-        await screenshot({ format: "png" }).then((image) => {
-          logger.info("screenshot taken!");
-          return this.attachScreenshotInPngFormatToReport(image);
-        });
-      });
-  };
+export class CustomWorld extends World implements ICustomWorld {
+  public waitForTestController: Promise<any> | null = null;
+  public testController: TestController | null = null;
 
-  /**
-   * Adds the screenshot under the given path to the json report
-   *
-   * @param pathToScreenshot The path under which the screenshot has been saved
-   */
-  this.attachScreenshotToReport = async (pathToScreenshot: string) => {
-    // eslint-disable-next-line id-blacklist
-    const imgInBase64 = await encode(pathToScreenshot, {
-      local: true,
-      string: true,
+  constructor(options: IWorldOptions) {
+    super(options);
+
+    // The waitForTestController promise object waits for TestCafe to finish setting up the controller asynchronously,
+    // then adds it to Cucumber’s world scope as testController.
+    // It calls the testControllerHolder.get function to trigger the promise to return the testController.
+    this.waitForTestController = testControllerHolder.get().then((tc: any) => {
+      console.log("waitForTestController", tc);
+      this.testController = tc;
+      return tc;
     });
-    return attach(imgInBase64, "image/png");
-  };
+  }
 
-  /**
-   * Adds the screenshot to the json report
-   *
-   * @param pngImage the image in png format
-   */
-  this.attachScreenshotInPngFormatToReport = (pngImage: any) =>
-    attach(pngImage, "image/png");
+  debug = false;
 }
-
-setDefaultTimeout(DEFAULT_TIMEOUT);
 
 setWorldConstructor(CustomWorld);

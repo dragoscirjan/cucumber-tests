@@ -29,6 +29,7 @@ export class CustomWorld extends World implements ICustomWorld {
   constructor(options: IWorldOptions) {
     super(options);
   }
+
   debug = false;
 }
 

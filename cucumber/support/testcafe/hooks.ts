@@ -1,217 +1,70 @@
-import { existsSync, unlinkSync } from "fs";
-import { After, AfterAll, BeforeAll, Status } from "@cucumber/cucumber";
-
-const generatePDFReport = require("../../scripts/pdf-report");
-import {
-  BASE_URL,
-  BROWSER,
-  BROWSER_FLAGS,
-  LOCALE,
-  RECORD_FAILED_ONLY,
-  RECORD_SINGLE_FILE,
-  RECORD_VIDEO,
-  TEST_FAIL_FILE,
-  VIDEO_DIR,
-} from "./environment";
-// import { SelectorFactoryInitializer } from "../utils/selector-factory";
-import logger from "./logger";
-import { testControllerHolder } from "./test-controller-holder";
-import { testControllerConfig } from "./test-controller-config";
-import {
-  setMetadata,
-  createMetadataFile,
-  createTestFailFile,
-  createTestFile,
-  generateHtmlReport,
-  generateJunitReport,
-  getAppVersion,
-  isLiveModeOn,
-  removeMetadataFile,
-} from "./helper";
-
-// tslint:disable-next-line
+import fs from "fs";
 import createTestCafe from "testcafe";
+import testControllerHolder from "./holder";
+import { AfterAll, setDefaultTimeout, Before, After } from "@cucumber/cucumber";
 
-const TEST_CAFE_HOST = "localhost";
-const TEST_FILE = "test.js";
-const DELAY = 5 * 1000;
+const timeout: number = 100000;
+let cafeRunner: TestCafe;
 
-let testCafe: TestCafe;
+const testFile = "cucumber/support/testcafe/cucumbertest.ts";
 
-const state = {
-  failedScenarios: 0,
-  browserMedadataAdded: false,
-  startTime: 0,
-};
-
-/**
- * Creates a server instance of TestCafe and starts a test-runner.
- * For more info see {@link https://devexpress.github.io/testcafe/documentation/using-testcafe/programming-interface/testcafe.html}
- */
-function createServerAndRunTests(): void {
-  createTestCafe({ hostname: TEST_CAFE_HOST })
-    .then((tc: TestCafe) => {
-      testCafe = tc;
-      let runner: Runner = tc.createRunner();
-
-      runner = runner
-        .src(`./${TEST_FILE}`)
-        .screenshots("out/reports/screenshots/", false) // we create screenshots manually!
-        .browsers(`${BROWSER}${BROWSER_FLAGS}`.trim());
-      if (RECORD_VIDEO) {
-        runner = runner.video(VIDEO_DIR, {
-          singleFile: RECORD_SINGLE_FILE,
-          failedOnly: RECORD_FAILED_ONLY,
-          pathPattern: "${TEST_INDEX}/${USERAGENT}/${FILE_INDEX}.mp4",
-        });
-      }
-
-      return runner
-        .run({ quarantineMode: true })
-        .catch((error: any) => logger.error("Caught error: ", error));
-    })
-    .then(() => {
-      if (state.failedScenarios > 0) {
-        logger.warn(
-          `🔥🔥🔥 ${state.failedScenarios} scenarios (retry included) failed 🔥🔥🔥`
-        );
-      } else {
-        logger.info("All tests passed 😊");
-      }
-    })
-    .catch((error: any) => logger.error("Caught error: ", error));
+function createTestFile(): void {
+  fs.writeFileSync(
+    testFile,
+    'import { fixture } from "testcafe";\n\n' +
+      'import testControllerHolder from "./holder";\n\n' +
+      'fixture("cucumberfixture")\n' +
+      "test\n" +
+      '("test", testControllerHolder.capture);'
+  );
 }
 
-function createLiveServerAndRunTests(): void {
-  createTestCafe({
-    hostname: TEST_CAFE_HOST,
-    port1: 1337,
-    port2: 1338,
-  })
-    .then((tc: TestCafe) => {
-      testCafe = tc;
-      let liveRunner: Runner = tc.createLiveModeRunner();
-
-      liveRunner = liveRunner
-        .src(`./${TEST_FILE}`)
-        .browsers(`${BROWSER}${BROWSER_FLAGS}`.trim());
-
-      return liveRunner
-        .run()
-        .catch((error: any) => logger.error("Caught error: ", error));
-    })
-    .then(() => testCafe.close())
-    .catch((error: any) => logger.error("Caught error: ", error));
+function runTest(browser: string): void {
+  createTestCafe("localhost", 1337, 1338).then((tc: TestCafe) => {
+    cafeRunner = tc;
+    const runner = tc.createRunner();
+    return runner
+      .src(testFile)
+      .screenshots("screenshots/", true)
+      .browsers(browser)
+      .run();
+  });
 }
 
-/**
- * Runs before all tests are executed.
- * - collect metadata for the HTML report
- * - create the dummy test file to capture the {@link TestController}
- * - create TestCafe and runs the {@link Runner} w.r.t. the set environment variables (config)
- */
-BeforeAll((callback: any) => {
-  createMetadataFile();
+setDefaultTimeout(timeout);
 
-  setMetadata("Base URL", BASE_URL);
-  setMetadata("Locale", LOCALE);
-  // tslint:disable-next-line:no-commented-code
-  // TODO if you want to have the app version in the report fetchAndAddVersionsToMetadata();
-
-  state.startTime = new Date().getTime();
-
-  testControllerHolder.register(testControllerConfig);
-  //   SelectorFactoryInitializer.init();
-
-  if (!existsSync(TEST_FILE)) {
-    createTestFile(TEST_FILE);
-  }
-
-  if (isLiveModeOn()) {
-    createLiveServerAndRunTests();
-  } else {
-    createServerAndRunTests();
-  }
-
-  setTimeout(() => callback(), DELAY);
+Before(async function (cw: any) {
+  runTest("chrome");
+  createTestFile();
+  // console.log("Before", cw, this);
+  // await this.waitForTestController;
+  // console.log("Before", "controller found", this.testController);
+  // await this.testController.maximizeWindow();
 });
 
-/**
- * AfterEach (scenario):
- * - add metadata regarding the environment (browser + OS)
- * - take screenshot if the test case (scenario) has failed
- */
-After(async function (this: any, testCase: any) {
-  if (isLiveModeOn()) {
-    return;
-  }
-
-  if (!state.browserMedadataAdded) {
-    state.browserMedadataAdded = true;
-    setMetadata(
-      "Environment",
-      (await this.getTestController()).browser.prettyUserAgent as string
-    );
-    setMetadata("Browser Flags", BROWSER_FLAGS);
-  }
-
-  if (testCase.result.status === Status.FAILED) {
-    state.failedScenarios += 1;
-    await this.addScreenshotToReport();
-  }
+After(function () {
+  fs.unlinkSync(testFile);
+  testControllerHolder.free();
 });
 
-/**
- * Runs after all tests got executed.
- * Hook-Order:
- * 0. Hook: BeforeAll
- * - execute dummy test ('fixture') and capture TestController
- * 1. Execute feature 1 -> feature n (Hook: After)
- * 2. Hook: After All
- * - add metadata (start, stop and duration)
- * - cleanup (destroy TestController, delete dummy test file)
- * - generate reports (JSON, HTML and JUNIT)
- * - create file to indicate that tests failed (for CI/CD) if test failed
- * - shutdown TestCafe
- */
-AfterAll((callback: any) => {
-  if (isLiveModeOn()) {
-    return;
-  }
+AfterAll(function () {
+  let intervalId: NodeJS.Timeout;
+  const waitForTestCafe = () => {
+    intervalId = setInterval(checkLastResponse, 500);
+  };
 
-  const endTime = new Date().getTime();
-  const duration = endTime - state.startTime;
-  setMetadata("Duration", new Date(duration).toISOString().substr(11, 8));
-  setMetadata("Start", new Date(state.startTime).toISOString());
-  setMetadata("End", new Date(endTime).toISOString());
+  const checkLastResponse = () => {
+    if (
+      testControllerHolder.testRun?.lastDriverStatusResponse ===
+      "test-done-confirmation"
+    ) {
+      if (cafeRunner) {
+        cafeRunner?.close();
+      }
+      clearInterval(intervalId);
+      process.exit();
+    }
+  };
 
-  //   SelectorFactoryInitializer.destroy();
-  testControllerHolder.destroy();
-
-  if (existsSync(TEST_FILE)) {
-    unlinkSync(TEST_FILE);
-  }
-
-  if (state.failedScenarios > 0 && TEST_FAIL_FILE) {
-    createTestFailFile();
-  }
-
-  if (existsSync(TEST_FILE)) {
-    unlinkSync(TEST_FILE);
-  }
-
-  setTimeout(() => callback(), DELAY);
-  setTimeout(() => {
-    generateHtmlReport();
-    generateJunitReport();
-    generatePDFReport(getAppVersion());
-
-    removeMetadataFile();
-
-    logger.info("Shutting down TestCafe...");
-    testCafe
-      .close()
-      .then(() => logger.info("Finished"))
-      .catch((error: any) => logger.error("Caught error: ", error));
-  }, DELAY * 2);
+  waitForTestCafe();
 });
