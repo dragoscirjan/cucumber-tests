@@ -10,7 +10,7 @@
     "cypress:run": "npm run cypress -- run",
     "--playwright": "playwright test --config=playwright.config.ts",
     "playwright": "cucumber-js --config ./cucumber/playwright.js",
-    "testcafe": "cucumber-js --config ./cucumber/testcafe.js"
+    "testcafe": "cucumber-js --config ./cucumber/testcafe.js --tags 'not @skip'"
   },
   "keywords": [],
   "author": "",
@@ -28,6 +28,7 @@
     "logform": "^2.6.0",
     "node-base64-image": "^2.0.5",
     "playwright": "^1.39.0",
+    "screenshot-desktop": "^1.15.0",
     "testcafe": "^3.3.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2",
@@ -35,6 +36,7 @@
   },
   "devDependencies": {
     "@types/chai-string": "^1.4.4",
-    "@types/fs-extra": "^11.0.3"
+    "@types/fs-extra": "^11.0.3",
+    "@types/screenshot-desktop": "^1.12.3"
   }
 }

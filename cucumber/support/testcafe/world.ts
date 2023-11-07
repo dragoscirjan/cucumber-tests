@@ -6,12 +6,13 @@ import {
   setWorldConstructor,
 } from "@cucumber/cucumber";
 import * as chai from "chai";
-import * as chaiString from "chai-string";
+import chaiString from "chai-string";
+import screenshot from "screenshot-desktop";
+
 import { isLiveModeOn } from "./helper";
 import logger from "./logger";
-const screenshot = require("screenshot-desktop");
 
-chai.use(chaiString);
+chai.use(chaiString as any);
 
 const DEFAULT_TIMEOUT = isLiveModeOn() ? 60 * 60 * 1000 : 30 * 1000;
 
@@ -49,7 +50,7 @@ function CustomWorld(this: IWorldOptions & Ctx, { attach }: { attach: any }) {
           "encountered an error during taking screenshot, retry using another library...",
           error
         );
-        await screenshot({ format: "png" }).then((image) => {
+        await screenshot({ format: "png" }).then((image: any) => {
           logger.info("screenshot taken!");
           return this.attachScreenshotInPngFormatToReport(image);
         });

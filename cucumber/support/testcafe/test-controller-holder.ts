@@ -28,6 +28,8 @@ class TestControllerHolderImpl implements TestControllerHolder {
   public capture(t: TestController): Promise<any> {
     TestControllerHolderImpl.testController = t;
 
+    console.log(t);
+
     TestControllerHolderImpl?.testControllerListener.forEach((l) =>
       l.onTestControllerSet(t)
     );
